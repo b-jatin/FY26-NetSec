@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   const missing = [];
@@ -16,6 +16,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Client-side browser client
 export function createSupabaseBrowserClient() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables. Please check your Vercel project settings.');
+  }
   return createBrowserClient(supabaseUrl, supabaseAnonKey);
 }
 
@@ -24,6 +27,9 @@ export function createSupabaseServiceClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) {
     throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
+  }
+  if (!supabaseUrl) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
   }
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: {
