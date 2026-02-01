@@ -40,15 +40,21 @@ export async function generateContextAwarePrompt(
     let contextString = '';
 
     // Determine user type and situation
-    const isNewUser = historicalPatterns && historicalPatterns.totalEntries < 5;
+    const totalEntries = historicalPatterns?.totalEntries ?? 0;
+    const isNewUser = totalEntries < 5;
     const hasGap = historicalPatterns && historicalPatterns.gapDays > 2;
     const hasPatterns = historicalPatterns && historicalPatterns.commonThemes.length > 0;
 
     if (entryCount === 1) {
         // First entry of the day
-        if (isNewUser) {
-            // New user - motivational and encouraging
-            contextString = 'This is a new user (less than 5 total entries). Create a warm, welcoming prompt that encourages them to start their journaling journey. Make it feel safe, non-judgmental, and motivational. Focus on helping them understand the value of journaling for mental wellness.';
+        if (isNewUser || totalEntries === 0) {
+            // New user (0 entries) - very motivational and inspiring
+            if (totalEntries === 0) {
+                contextString = 'This is a brand new user with zero journal entries. They are just starting their journaling journey. Create an inspiring, warm, and welcoming prompt that excites them about journaling. Make it feel safe, non-judgmental, and motivational. Focus on helping them overcome blank page anxiety. The prompt should be engaging and make them eager to write. Examples of good prompts: "What small moment from today made you smile?" or "What are you grateful for right now?" or "What challenge are you proud of overcoming?"';
+            } else {
+                // New user (1-4 entries) - motivational and encouraging
+                contextString = 'This is a new user (less than 5 total entries). Create a warm, welcoming prompt that encourages them to continue their journaling journey. Make it feel safe, non-judgmental, and motivational. Focus on helping them understand the value of journaling for mental wellness.';
+            }
         } else if (hasGap) {
             // Gap detected - gentle re-engagement
             const gapText = historicalPatterns.gapDays === 1 
@@ -85,7 +91,14 @@ export async function generateContextAwarePrompt(
             }
         }
 
-        contextString = `The user just wrote their second entry today. Their first entry was about: ${themes || 'various topics'}, with a ${sentiment} sentiment.${patternContext} Create a prompt that builds on this and encourages them to explore deeper or related thoughts.`;
+        // For second entry, focus on building on the first entry, not on being a "new journaler"
+        if (totalEntries === 1) {
+            // This is their second entry ever - encourage continuation
+            contextString = `The user just wrote their second entry today (this is only their second entry ever). Their first entry was about: ${themes || 'various topics'}, with a ${sentiment} sentiment.${patternContext} Create a prompt that encourages them to continue journaling and explore deeper thoughts or related topics. Do NOT mention that they are a "new journaler" - they've already started their journey.`;
+        } else {
+            // Second entry of the day (but not new user)
+            contextString = `The user just wrote their second entry today. Their first entry was about: ${themes || 'various topics'}, with a ${sentiment} sentiment.${patternContext} Create a prompt that builds on this and encourages them to explore deeper or related thoughts.`;
+        }
     } else if (entryCount >= 3 && lastEntry) {
         // Multiple entries - encourage reflection and pattern recognition
         const themes = lastEntry.themes.slice(0, 3).join(', ');
@@ -122,17 +135,51 @@ export async function generateContextAwarePrompt(
     }
 
     // Generate prompt using Claude
-    const promptText = await callClaude(
+    let promptText = await callClaude(
         [
             {
                 role: 'user',
-                content: `Generate a motivational and inspiring journaling prompt for today. ${userContent} Make it concise and exciting (8-12 words maximum).`,
+                content: `Generate a motivational and inspiring journaling prompt for today. ${userContent} 
+
+CRITICAL INSTRUCTIONS:
+- Return ONLY the prompt question itself (8-12 words maximum)
+- Do NOT include any explanation, description, or additional text
+- Do NOT include bullet points, dashes, or lists
+- Do NOT explain why the prompt is good
+- Just return the question, nothing else
+
+Example of CORRECT output:
+"What's one small moment today that deserves to be remembered?"
+
+Example of INCORRECT output (DO NOT DO THIS):
+"What's one small moment today that deserves to be remembered? - Feels completely safe and non-judgmental - Requires no deep soul-searching"`,
             },
         ],
         {
-            maxTokens: 50,
+            maxTokens: 30, // Reduced to prevent descriptions
             temperature: 0.8,
             system: `You are an inspiring and motivational journaling coach. Your goal is to generate concise, exciting, and encouraging prompts (8-12 words) that make the user eager to write.
+
+CRITICAL RULES - READ CAREFULLY:
+1. Return ONLY the prompt question itself (8-12 words)
+2. Do NOT include explanations, descriptions, or any text beyond the prompt question
+3. Do NOT include bullet points, dashes, or lists
+4. Do NOT explain why the prompt is good or what it helps with
+5. Do NOT include phrases like "Feels completely safe", "Requires no deep soul-searching", etc.
+6. Just return the question, nothing else
+
+Examples of CORRECT output (ONLY the prompt):
+- "What small victory are you celebrating today?"
+- "What made you smile today?"
+- "Reflect on a moment of growth."
+- "What's one small moment today that deserves to be remembered?"
+
+Examples of INCORRECT output (DO NOT DO THIS):
+- "What small victory are you celebrating today? This prompt is perfect for new journalers..."
+- "What made you smile today? This prompt helps you..."
+- "What's one small moment today that deserves to be remembered? - Feels completely safe and non-judgmental - Requires no deep soul-searching"
+
+If you include ANY description, explanation, or additional text beyond the question, your response will be rejected.
 
 Examples of concise, inspiring prompts:
 - "What small victory are you celebrating today?"
@@ -175,6 +222,98 @@ Examples of effective prompts:
 Keep prompts concise (8-12 words), warm, and valuable. Make users feel understood and motivated to write.`,
         }
     );
+
+    // Extract only the prompt question (remove any descriptions or explanations)
+    promptText = promptText.trim();
+    
+    // Remove descriptions that start with common phrases or bullet points
+    const descriptionPatterns = [
+        /This prompt is perfect for you/i,
+        /This prompt helps you/i,
+        /This prompt/i,
+        /because it/i,
+        /as a new journaler/i,
+        /new journaler/i,
+        /feels completely/i,
+        /feels.*safe/i,
+        /requires no/i,
+        /requires.*deep/i,
+        /non-judgmental/i,
+        /deep soul-searching/i,
+        /^\s*[-–—]\s*/, // Lines starting with dashes (bullets)
+    ];
+    
+    // Split by newlines first to handle multi-line responses
+    const lines = promptText.split('\n').map(line => line.trim()).filter(line => line);
+    
+    // Find the first line that ends with ? or . and looks like a question
+    let questionLine = '';
+    for (const line of lines) {
+        const trimmed = line.trim();
+        // Check if this line looks like a question (ends with ? or contains question words)
+        if (trimmed.match(/[?.]$/) || 
+            /^(what|how|why|when|where|who|which|can|could|would|should|will|did|do|does|is|are|was|were)/i.test(trimmed)) {
+            // Extract only up to the question mark or period
+            const match = trimmed.match(/^(.+?)[?.]/);
+            if (match) {
+                questionLine = match[1] + '?';
+            } else {
+                questionLine = trimmed;
+            }
+            break;
+        }
+    }
+    
+    // If we found a question line, use it; otherwise try to extract from first line
+    if (questionLine) {
+        promptText = questionLine;
+    } else if (lines.length > 0) {
+        // Take first line and remove anything after question mark/period
+        const firstLine = lines[0];
+        const match = firstLine.match(/^(.+?)[?.]/);
+        if (match) {
+            promptText = match[1] + '?';
+        } else {
+            // Remove description patterns from first line
+            let cleaned = firstLine;
+            for (const pattern of descriptionPatterns) {
+                cleaned = cleaned.replace(pattern, '').trim();
+            }
+            promptText = cleaned;
+        }
+    }
+    
+    // Final cleanup: remove any remaining description patterns
+    for (const pattern of descriptionPatterns) {
+        promptText = promptText.replace(pattern, '').trim();
+    }
+    
+    // Remove anything after question mark that looks like a description
+    const questionMarkIndex = promptText.indexOf('?');
+    if (questionMarkIndex > 0) {
+        const afterQuestion = promptText.substring(questionMarkIndex + 1).trim();
+        // If there's text after the question mark, check if it's a description
+        if (afterQuestion && (
+            /^(feels|requires|because|this|as a|new)/i.test(afterQuestion) ||
+            /^[-–—]/.test(afterQuestion)
+        )) {
+            promptText = promptText.substring(0, questionMarkIndex + 1).trim();
+        }
+    }
+    
+    // Ensure we end with a question mark if it's a question
+    if (promptText && !promptText.match(/[?.!]$/)) {
+        if (promptText.toLowerCase().includes('what') || 
+            promptText.toLowerCase().includes('how') || 
+            promptText.toLowerCase().includes('why') ||
+            promptText.toLowerCase().includes('when') ||
+            promptText.toLowerCase().includes('where')) {
+            promptText += '?';
+        }
+    }
+    
+    // Final trim
+    promptText = promptText.trim();
 
     // Build context object for storage
     const contextData: Record<string, unknown> = {

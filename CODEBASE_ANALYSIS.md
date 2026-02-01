@@ -1,8 +1,8 @@
-# MindfulSpace - Codebase Analysis & Structure
+# Reflect AI - Codebase Analysis & Structure
 
 ## 📋 Executive Summary
 
-**MindfulSpace** is a privacy-first AI-powered journaling companion built with Next.js 14, TypeScript, Prisma, and Supabase. The application demonstrates a hybrid AI approach combining local NLP processing (AFINN sentiment analysis, Compromise theme extraction) with cloud-based AI (Anthropic Claude API) while maintaining strict privacy controls through PII masking.
+**Reflect AI** is a privacy-first AI-powered journaling companion built with Next.js 14, TypeScript, Prisma, and Supabase. The application demonstrates a hybrid AI approach combining local NLP processing (AFINN sentiment analysis, Compromise theme extraction) with cloud-based AI (Anthropic Claude API) while maintaining strict privacy controls through PII masking.
 
 ---
 

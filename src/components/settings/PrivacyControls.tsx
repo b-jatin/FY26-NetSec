@@ -120,7 +120,7 @@ export function PrivacyControls({ user }: PrivacyControlsProps): JSX.Element {
             Allow AI Features
           </Label>
           <p className="text-sm text-muted-foreground">
-            Enable AI-powered prompts, suggestions, and summaries
+            Enable AI-powered writing inspiration, AI companion
           </p>
         </div>
         <Switch
@@ -140,7 +140,7 @@ export function PrivacyControls({ user }: PrivacyControlsProps): JSX.Element {
             Allow Analytics
           </Label>
           <p className="text-sm text-muted-foreground">
-            Enable sentiment analysis and theme tracking
+            Enable summaries, sentiment and theme tracking
           </p>
         </div>
         <Switch

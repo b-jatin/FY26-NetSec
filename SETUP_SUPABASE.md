@@ -1,6 +1,6 @@
 # Supabase Database Setup Guide
 
-Follow these steps to set up your Supabase database for MindfulSpace.
+Follow these steps to set up your Supabase database for Reflect AI.
 
 ## Step 1: Create a Supabase Project
 
@@ -8,7 +8,7 @@ Follow these steps to set up your Supabase database for MindfulSpace.
 2. Sign up or log in to your account
 3. Click "New Project"
 4. Fill in:
-   - **Project Name**: `mindfulspace` (or your preferred name)
+   - **Project Name**: `reflect-ai` (or your preferred name)
    - **Database Password**: Create a strong password (save this!)
    - **Region**: Choose the closest region to you
    - **Pricing Plan**: Free tier is fine for development

@@ -74,6 +74,87 @@ export function AIPromptCard({ refreshTrigger, allowAI = true }: AIPromptCardPro
         ? 'Second entry'
         : `${entryCount}th entry`;
 
+  // Extract only the prompt question (remove any descriptions)
+  let promptText = data.prompt.trim();
+  
+  // Remove descriptions that start with common phrases or bullet points
+  const descriptionPatterns = [
+    /This prompt is perfect for you/i,
+    /This prompt helps you/i,
+    /This prompt/i,
+    /because it/i,
+    /as a new journaler/i,
+    /new journaler/i,
+    /perfect for you/i,
+    /feels completely/i,
+    /feels.*safe/i,
+    /requires no/i,
+    /requires.*deep/i,
+    /non-judgmental/i,
+    /deep soul-searching/i,
+    /^\s*[-–—]\s*/, // Lines starting with dashes (bullets)
+  ];
+  
+  // Split by newlines first
+  const lines = promptText.split('\n').map(line => line.trim()).filter(line => line);
+  
+  // Find the first line that looks like a question
+  let questionLine = '';
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Check if this line looks like a question
+    if (trimmed.match(/[?.]$/) || 
+        /^(what|how|why|when|where|who|which|can|could|would|should|will|did|do|does|is|are|was|were)/i.test(trimmed)) {
+      // Extract only up to the question mark or period
+      const match = trimmed.match(/^(.+?)[?.]/);
+      if (match) {
+        questionLine = match[1] + '?';
+      } else {
+        questionLine = trimmed;
+      }
+      break;
+    }
+  }
+  
+  // If we found a question line, use it; otherwise try to extract from first line
+  if (questionLine) {
+    promptText = questionLine;
+  } else if (lines.length > 0) {
+    const firstLine = lines[0];
+    const match = firstLine.match(/^(.+?)[?.]/);
+    if (match) {
+      promptText = match[1] + '?';
+    } else {
+      // Remove description patterns from first line
+      let cleaned = firstLine;
+      for (const pattern of descriptionPatterns) {
+        cleaned = cleaned.replace(pattern, '').trim();
+      }
+      promptText = cleaned;
+    }
+  }
+  
+  // Final cleanup: remove any remaining description patterns
+  for (const pattern of descriptionPatterns) {
+    promptText = promptText.replace(pattern, '').trim();
+  }
+  
+  // Remove anything after question mark that looks like a description
+  const questionMarkIndex = promptText.indexOf('?');
+  if (questionMarkIndex > 0) {
+    const afterQuestion = promptText.substring(questionMarkIndex + 1).trim();
+    // If there's text after the question mark, check if it's a description
+    if (afterQuestion && (
+      /^(feels|requires|because|this|as a|new)/i.test(afterQuestion) ||
+      /^[-–—]/.test(afterQuestion)
+    )) {
+      promptText = promptText.substring(0, questionMarkIndex + 1).trim();
+    }
+  }
+  
+  // Final trim
+  promptText = promptText.trim();
+
   return (
     <Card className="transition-all duration-300">
       <CardHeader>
@@ -90,7 +171,7 @@ export function AIPromptCard({ refreshTrigger, allowAI = true }: AIPromptCardPro
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm">{data.prompt}</p>
+        <p className="text-sm">{promptText}</p>
       </CardContent>
     </Card>
   );

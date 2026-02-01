@@ -25,12 +25,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const dbUser = await prisma.user.findUnique({
+    // Find or create user in database
+    let dbUser = await prisma.user.findUnique({
       where: { email: user.email! },
     });
 
     if (!dbUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      dbUser = await prisma.user.create({
+        data: {
+          email: user.email!,
+          emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+        },
+      });
     }
 
     // Check user's privacy settings

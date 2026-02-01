@@ -39,12 +39,18 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps):
     return <div>Unauthorized</div>;
   }
 
-  const dbUser = await prisma.user.findUnique({
+  // Find or create user in database
+  let dbUser = await prisma.user.findUnique({
     where: { email: user.email! },
   });
 
   if (!dbUser) {
-    return <div>User not found</div>;
+    dbUser = await prisma.user.create({
+      data: {
+        email: user.email!,
+        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+      },
+    });
   }
 
   const entry = await prisma.entry.findFirst({

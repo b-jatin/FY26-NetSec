@@ -1,11 +1,11 @@
-# MindfulSpace - AI Journaling Companion
+# Reflect AI - AI Journaling Companion
 ## Complete Project Documentation for Cursor AI Development
 
 ---
 
 ## 📋 PROJECT OVERVIEW
 
-**Project Name:** MindfulSpace  
+**Project Name:** Reflect AI  
 **Type:** Progressive Web Application (PWA)  
 **Timeline:** 48 hours (Feb 1st 5:00 PM PST deadline)  
 **Target:** Palo Alto Networks NetSec Hackathon Case Study
@@ -1317,7 +1317,7 @@ Create 10-15 sample entries with:
 
 ## 🎉 YOU'RE READY TO BUILD!
 
-This document contains everything you need to build MindfulSpace with Cursor AI. Start by:
+This document contains everything you need to build Reflect AI with Cursor AI. Start by:
 
 1. Setting up the project structure
 2. Implementing the database schema

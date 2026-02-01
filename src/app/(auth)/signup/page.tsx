@@ -8,10 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { AuthPrivacyControls } from '@/components/auth/AuthPrivacyControls';
 
 export default function SignupPage(): JSX.Element {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [allowAI, setAllowAI] = useState(true);
+  const [allowAnalytics, setAllowAnalytics] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -22,7 +25,7 @@ export default function SignupPage(): JSX.Element {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -31,6 +34,32 @@ export default function SignupPage(): JSX.Element {
       });
 
       if (error) throw error;
+
+      // Save privacy settings if user was created
+      if (data.user) {
+        try {
+          // Wait a bit for the user to be created in the database
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          
+          const response = await fetch('/api/user/preferences', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              privacySettings: {
+                allowAI,
+                allowAnalytics,
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            console.error('Failed to save privacy settings');
+          }
+        } catch (settingsError) {
+          console.error('Error saving privacy settings:', settingsError);
+          // Don't fail signup if settings save fails
+        }
+      }
 
       toast({
         title: 'Success',
@@ -55,7 +84,7 @@ export default function SignupPage(): JSX.Element {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create an account</CardTitle>
-          <CardDescription>Start your journaling journey with MindfulSpace</CardDescription>
+          <CardDescription>Start your journaling journey with Reflect AI</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
@@ -86,6 +115,14 @@ export default function SignupPage(): JSX.Element {
                 required
                 minLength={6}
                 disabled={isLoading}
+              />
+            </div>
+            <div className="pt-4 border-t">
+              <AuthPrivacyControls
+                allowAI={allowAI}
+                allowAnalytics={allowAnalytics}
+                onAllowAIChange={setAllowAI}
+                onAllowAnalyticsChange={setAllowAnalytics}
               />
             </div>
           </CardContent>

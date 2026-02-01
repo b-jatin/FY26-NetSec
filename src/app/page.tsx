@@ -10,7 +10,6 @@ import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { Footer } from '@/components/layout/Footer';
 
 export default function HomePage(): JSX.Element {
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -70,13 +69,11 @@ export default function HomePage(): JSX.Element {
                 </Button>
               </Link>
             ) : (
-              <Button 
-                size="lg" 
-                className="text-lg px-8"
-                onClick={() => setShowOnboarding(true)}
-              >
-                Start Journaling
-              </Button>
+              <Link href="/signup">
+                <Button size="lg" className="text-lg px-8">
+                  Start Journaling
+                </Button>
+              </Link>
             )}
           </div>
 
@@ -128,29 +125,6 @@ export default function HomePage(): JSX.Element {
       </section>
 
       <Footer />
-      
-      {!isAuthenticated && showOnboarding && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-lg p-6 max-w-md w-full space-y-4">
-            <h2 className="text-2xl font-bold">Welcome to Reflect AI</h2>
-            <p className="text-muted-foreground">
-              Get started by creating an account to begin your journaling journey.
-            </p>
-            <div className="flex gap-4">
-              <Link href="/signup" className="flex-1">
-                <Button className="w-full">Sign Up</Button>
-              </Link>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setShowOnboarding(false)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

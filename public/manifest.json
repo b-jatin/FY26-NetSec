@@ -1,6 +1,6 @@
 {
-  "name": "MindfulSpace - AI Journaling Companion",
-  "short_name": "MindfulSpace",
+  "name": "Reflect AI - AI Journaling Companion",
+  "short_name": "Reflect AI",
   "description": "Privacy-first AI-powered journaling companion",
   "start_url": "/",
   "display": "standalone",

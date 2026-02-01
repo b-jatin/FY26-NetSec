@@ -1,4 +1,4 @@
-# MindfulSpace - AI Journaling Companion
+# Reflect AI - AI Journaling Companion
 
 A privacy-first AI-powered journaling companion built for the Palo Alto Networks NetSec Hackathon.
 

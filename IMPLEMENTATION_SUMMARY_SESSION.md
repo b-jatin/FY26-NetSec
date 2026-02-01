@@ -241,7 +241,7 @@ Regenerate button was not functional - clicking it did nothing.
 
 **File:** `src/app/page.tsx`
 - Removed Dashboard and Write buttons from header for logged-in users
-- Header now only shows "MindfulSpace" logo for authenticated users
+- Header now only shows "Reflect AI" logo for authenticated users
 - Sign In/Get Started buttons still show for non-authenticated users
 
 ---

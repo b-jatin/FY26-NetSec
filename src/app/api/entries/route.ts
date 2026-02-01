@@ -131,10 +131,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (allowAnalytics) {
       const sentimentResult = analyzeSentiment(validated.content);
-      const themeResult = extractThemes(validated.content);
       sentimentScore = sentimentResult.score;
       sentimentLabel = sentimentResult.label;
-      themes = themeResult.themes.slice(0, 5); // Top 5 themes
+      
+      // Extract themes with sentiment for compound theme generation
+      const themeResult = extractThemes(validated.content, sentimentLabel);
+      themes = themeResult.themes.slice(0, 2); // Limit to 1-2 themes
       analyzed = true;
     }
 

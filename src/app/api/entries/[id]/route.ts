@@ -126,10 +126,12 @@ export async function PUT(
     // Re-analyze sentiment and themes only if allowAnalytics was true for this entry
     if (existingEntry.allowAnalytics) {
       const sentimentResult = analyzeSentiment(validated.content);
-      const themeResult = extractThemes(validated.content);
       sentimentScore = sentimentResult.score;
       sentimentLabel = sentimentResult.label;
-      themes = themeResult.themes.slice(0, 5);
+      
+      // Extract themes with sentiment for compound theme generation
+      const themeResult = extractThemes(validated.content, sentimentLabel);
+      themes = themeResult.themes.slice(0, 2); // Limit to 1-2 themes
       analyzed = true;
     } else {
       // If analytics were not allowed, ensure these fields are null/empty on update
