@@ -37,3 +37,12 @@ next-env.d.ts
 
 # prisma
 /prisma/migrations
+
+# documentation files (keep only README.md)
+CODEBASE_ANALYSIS.md
+IMPLEMENTATION_SUMMARY_SESSION.md
+PROJECT_DOCUMENTATION.md
+SETUP_SUPABASE.md
+
+# cursor-specific files
+.cursorrules
