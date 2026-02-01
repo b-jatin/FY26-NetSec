@@ -63,7 +63,7 @@ export default async function SettingsPage(): Promise<JSX.Element> {
         <CardHeader>
           <CardTitle>Theme Settings</CardTitle>
           <CardDescription>
-            Customize the application's appearance
+          Customize the app appearance
           </CardDescription>
         </CardHeader>
         <CardContent>
