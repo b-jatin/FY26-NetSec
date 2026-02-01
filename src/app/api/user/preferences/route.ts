@@ -45,8 +45,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ privacySettings });
   } catch (error) {
     console.error('Error fetching preferences:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isPrismaError = errorMessage.includes('PrismaClientInitializationError') || errorMessage.includes('Can\'t reach data');
+    
     return NextResponse.json(
-      { error: 'Failed to fetch preferences' },
+      { 
+        error: 'Failed to fetch preferences',
+        details: isPrismaError 
+          ? 'Database connection error. Please check DATABASE_URL in Vercel settings. Use connection pooling URL (port 6543) for Supabase.'
+          : errorMessage
+      },
       { status: 500 }
     );
   }
