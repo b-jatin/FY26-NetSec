@@ -51,9 +51,17 @@ function scoreTheme(theme: string, frequency: number): number {
 
 /**
  * Create compound theme by combining sentiment with theme
+ * Only creates compounds for canonical themes
  */
 function createCompoundTheme(theme: string, sentimentLabel?: string): string {
     if (!sentimentLabel || sentimentLabel === 'neutral') {
+        return theme;
+    }
+    
+    // Only create compound if theme is a canonical theme
+    const canonicalTheme = getCanonicalTheme(theme);
+    if (!canonicalTheme) {
+        // Not a canonical theme - return as-is, don't add sentiment
         return theme;
     }
     
@@ -67,17 +75,17 @@ function createCompoundTheme(theme: string, sentimentLabel?: string): string {
     
     const emotion = sentimentMap[sentimentLabel] || '';
     if (!emotion) {
-        return theme;
+        return canonicalTheme; // Return canonical theme, not original
     }
     
-    // Only create compound if theme is a canonical theme (single word)
-    const words = theme.split(/\s+/);
+    // Only create compound for single-word canonical themes
+    const words = canonicalTheme.split(/\s+/);
     if (words.length === 1) {
-        return `${theme} ${emotion}`;
+        return `${canonicalTheme} ${emotion}`;
     }
     
-    // For multi-word themes, just return the theme
-    return theme;
+    // For multi-word canonical themes, just return the theme
+    return canonicalTheme;
 }
 
 export function extractThemes(text: string, sentimentLabel?: string): ThemeResult {
@@ -125,14 +133,46 @@ export function extractThemes(text: string, sentimentLabel?: string): ThemeResul
             themeFrequency[canonicalTheme] = (themeFrequency[canonicalTheme] || 0) + 1;
         });
 
+        // Extract verbs that might indicate themes (e.g., fitness-related verbs)
+        const verbs = doc.verbs().out('array');
+        const fitnessVerbs = [
+            'lift', 'lifted', 'lifting', 'lifts',
+            'workout', 'workouts', 'workouting',
+            'exercise', 'exercises', 'exercising',
+            'train', 'training', 'trains',
+            'run', 'running', 'runs',
+            'jog', 'jogging', 'jogs',
+            'swim', 'swimming', 'swims',
+            'cycle', 'cycling', 'cycles',
+        ];
+
+        verbs.forEach((verb: string) => {
+            const normalized = verb.toLowerCase().trim();
+            if (fitnessVerbs.includes(normalized)) {
+                // Map fitness verbs to health theme
+                const canonicalTheme = 'health';
+                if (!seenThemes.has(canonicalTheme)) {
+                    seenThemes.add(canonicalTheme);
+                }
+                themeFrequency[canonicalTheme] = (themeFrequency[canonicalTheme] || 0) + 1;
+            }
+        });
+
         // Score and sort themes by quality and frequency
         const scoredThemes = Object.entries(themeFrequency)
             .map(([theme, frequency]) => ({
                 theme,
                 frequency,
                 score: scoreTheme(theme, frequency),
+                isCanonical: getCanonicalTheme(theme) !== null,
             }))
-            .sort((a, b) => b.score - a.score)
+            .sort((a, b) => {
+                // Prioritize canonical themes - if one is canonical and other isn't, canonical wins
+                if (a.isCanonical && !b.isCanonical) return -1;
+                if (!a.isCanonical && b.isCanonical) return 1;
+                // If both are canonical or both aren't, sort by score
+                return b.score - a.score;
+            })
             .slice(0, 2) // Limit to top 2 themes
             .map(({ theme }) => {
                 // Create compound themes with sentiment
