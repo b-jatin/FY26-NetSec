@@ -5,6 +5,7 @@ import { Tag } from 'lucide-react';
 
 interface Entry {
   themes: string[];
+  allowAnalytics?: boolean;
 }
 
 interface ThemeCloudProps {
@@ -13,11 +14,13 @@ interface ThemeCloudProps {
 
 export function ThemeCloud({ entries }: ThemeCloudProps): JSX.Element {
   const themeFrequency: Record<string, number> = {};
-  entries.forEach((entry) => {
-    entry.themes.forEach((theme) => {
-      themeFrequency[theme] = (themeFrequency[theme] || 0) + 1;
+  entries
+    .filter((e) => e.allowAnalytics !== false) // Only include entries with analytics enabled
+    .forEach((entry) => {
+      entry.themes.forEach((theme) => {
+        themeFrequency[theme] = (themeFrequency[theme] || 0) + 1;
+      });
     });
-  });
 
   const sortedThemes = Object.entries(themeFrequency)
     .sort(([, a], [, b]) => b - a)

@@ -10,6 +10,48 @@ const updatePreferencesSchema = z.object({
   }).optional(),
 });
 
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized', details: authError?.message },
+        { status: 401 }
+      );
+    }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email! },
+      select: {
+        privacySettings: true,
+      },
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const privacySettings = (dbUser.privacySettings as Record<string, any>) || {
+      allowAI: true,
+      allowAnalytics: true,
+    };
+
+    return NextResponse.json({ privacySettings });
+  } catch (error) {
+    console.error('Error fetching preferences:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch preferences' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient();

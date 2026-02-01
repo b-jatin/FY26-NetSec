@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { PrivacyControls } from '@/components/settings/PrivacyControls';
 import { DataExport } from '@/components/settings/DataExport';
 import { AccountSettings } from '@/components/settings/AccountSettings';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default async function SettingsPage(): Promise<JSX.Element> {
@@ -49,6 +50,18 @@ export default async function SettingsPage(): Promise<JSX.Element> {
         </CardHeader>
         <CardContent>
           <PrivacyControls user={dbUser} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Theme Settings</CardTitle>
+          <CardDescription>
+            Customize the application's appearance
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeToggle />
         </CardContent>
       </Card>
 

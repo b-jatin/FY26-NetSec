@@ -20,9 +20,10 @@ interface EntryDetailClientProps {
   };
   entryId: string;
   sentiment: SentimentResult | null;
+  allowAI: boolean;
 }
 
-export function EntryDetailClient({ entry, entryId, sentiment }: EntryDetailClientProps): JSX.Element {
+export function EntryDetailClient({ entry, entryId, sentiment, allowAI }: EntryDetailClientProps): JSX.Element {
   const [currentText, setCurrentText] = useState(entry.content);
 
   return (
@@ -47,7 +48,7 @@ export function EntryDetailClient({ entry, entryId, sentiment }: EntryDetailClie
                   <time className="text-sm text-muted-foreground">
                     {format(new Date(entry.createdAt), 'MMMM dd, yyyy')}
                   </time>
-                  <SentimentIndicator sentiment={sentiment} />
+                  {allowAI && <SentimentIndicator sentiment={sentiment} allowAI={allowAI} />}
                 </div>
               </div>
             </CardHeader>
@@ -56,12 +57,13 @@ export function EntryDetailClient({ entry, entryId, sentiment }: EntryDetailClie
                 initialContent={entry.content} 
                 entryId={entry.id}
                 onContentChange={setCurrentText}
+                allowAI={allowAI}
               />
             </CardContent>
           </Card>
         </div>
         <div className="lg:col-span-1">
-          <AICompanion currentText={currentText} />
+          {allowAI && <AICompanion currentText={currentText} allowAI={allowAI} />}
         </div>
       </div>
     </div>

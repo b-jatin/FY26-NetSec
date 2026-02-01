@@ -20,7 +20,9 @@ export function EntryList({ entries }: EntryListProps): JSX.Element {
   if (entries.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No entries yet. Start writing your first entry!</p>
+        <p className="text-muted-foreground">
+          No entries found. Try adjusting your search or filters, or start writing your first entry!
+        </p>
       </div>
     );
   }

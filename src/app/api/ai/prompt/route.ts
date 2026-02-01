@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { prisma } from '@/lib/prisma';
-import { callClaude } from '@/lib/anthropic';
+import {
+  generateContextAwarePrompt,
+  getTodayEntryCount,
+  getLastEntry,
+  getRecentEntries,
+  getHistoricalEntries,
+} from '@/lib/prompt-generation';
 
+/**
+ * GET /api/ai/prompt
+ * Get the current prompt for today, or generate one if none exists
+ */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-        },
-      }
-    );
+    const supabase = await createSupabaseServerClient();
 
     const {
       data: { user },
@@ -35,7 +33,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check for existing prompt today
+    // Check user's privacy settings
+    const privacySettings = (dbUser.privacySettings as Record<string, any>) || {};
+    const allowAI = privacySettings.allowAI !== false;
+
+    // If AI features are disabled, return a generic prompt without using entry context
+    if (!allowAI) {
+      return NextResponse.json({
+        prompt: 'What would you like to write about today?',
+        entryCount: 1,
+      });
+    }
+
+    // Check for existing prompt today (most recent)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -58,37 +68,29 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     if (existingPrompt) {
-      return NextResponse.json({ prompt: existingPrompt.promptText });
+      return NextResponse.json({
+        prompt: existingPrompt.promptText,
+        entryCount: existingPrompt.entryCount ?? 1,
+      });
     }
 
-    // Get recent entries for context
-    const recentEntries = await prisma.entry.findMany({
-      where: { userId: dbUser.id },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: {
-        themes: true,
-        sentimentLabel: true,
-      },
+    // No existing prompt - generate first one of the day
+    // Only use entries where allowAI was true
+    const entryCount = await getTodayEntryCount(dbUser.id, true);
+    const lastEntry = await getLastEntry(dbUser.id, true);
+    const recentEntries = await getRecentEntries(dbUser.id, 5, true);
+    
+    // Fetch historical entries for pattern analysis
+    const { patterns: historicalPatterns } = await getHistoricalEntries(dbUser.id, 14, true);
+
+    // Generate new prompt
+    const generated = await generateContextAwarePrompt({
+      entryCount: entryCount + 1, // Next entry count
+      lastEntry,
+      recentEntries,
+      userId: dbUser.id,
+      historicalPatterns,
     });
-
-    const context = recentEntries.length > 0
-      ? `The user has been writing about: ${recentEntries.flatMap(e => e.themes).slice(0, 5).join(', ')}. Recent sentiment: ${recentEntries[0]?.sentimentLabel || 'neutral'}.`
-      : 'This is a new user starting their journaling journey.';
-
-    const promptText = await callClaude(
-      [
-        {
-          role: 'user',
-          content: `Generate a thoughtful, encouraging journaling prompt for today. ${context} Make it specific and engaging (max 20 words).`,
-        },
-      ],
-      {
-        maxTokens: 150,
-        temperature: 0.8,
-        system: 'You are a creative journaling coach that generates inspiring, thought-provoking prompts.',
-      }
-    );
 
     // Save prompt
     const expiresAt = new Date();
@@ -97,13 +99,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     await prisma.aIPrompt.create({
       data: {
         userId: dbUser.id,
-        promptText,
-        context: { recentEntries: recentEntries.length },
+        promptText: generated.promptText,
+        entryCount: generated.entryCount,
+        relatedEntryId: generated.relatedEntryId,
+        context: generated.context as any, // Prisma JSON type
         expiresAt,
       },
     });
 
-    return NextResponse.json({ prompt: promptText });
+    return NextResponse.json({
+      prompt: generated.promptText,
+      entryCount: generated.entryCount,
+    });
   } catch (error) {
     console.error('Error generating prompt:', error);
     return NextResponse.json(

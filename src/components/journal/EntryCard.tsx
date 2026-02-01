@@ -26,10 +26,21 @@ export function EntryCard({ entry }: EntryCardProps): JSX.Element {
     ? entry.content.substring(0, 150) + '...' 
     : entry.content;
 
+  // Map database sentiment labels to SentimentResult format
+  const mapSentimentLabel = (label: string | null): 'very happy' | 'happy' | 'neutral' | 'sad' | 'depressed' => {
+    if (!label) return 'neutral';
+    const lower = label.toLowerCase();
+    if (lower === 'very happy' || lower === 'positive') return 'very happy';
+    if (lower === 'happy') return 'happy';
+    if (lower === 'sad' || lower === 'negative') return 'sad';
+    if (lower === 'depressed') return 'depressed';
+    return 'neutral';
+  };
+
   const sentiment = entry.sentimentScore !== null && entry.sentimentLabel
     ? {
         score: entry.sentimentScore,
-        label: entry.sentimentLabel as 'positive' | 'neutral' | 'negative',
+        label: mapSentimentLabel(entry.sentimentLabel),
         positiveWords: [],
         negativeWords: [],
         comparative: entry.sentimentScore / 5,

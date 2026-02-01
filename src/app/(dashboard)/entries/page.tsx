@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { EntryList } from '@/components/journal/EntryList';
+import { EntriesPageClient } from '@/components/journal/EntriesPageClient';
 
 export default async function EntriesPage(): Promise<JSX.Element> {
   const cookieStore = await cookies();
@@ -50,7 +50,7 @@ export default async function EntriesPage(): Promise<JSX.Element> {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Your Entries</h1>
-      <EntryList entries={entries} />
+      <EntriesPageClient entries={entries} />
     </div>
   );
 }

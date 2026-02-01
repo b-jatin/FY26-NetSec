@@ -14,9 +14,11 @@ interface EntryEditorProps {
   initialContent?: string;
   entryId?: string;
   onContentChange?: (content: string) => void;
+  onEntrySaved?: (entryId: string) => void;
+  allowAI?: boolean;
 }
 
-export function EntryEditor({ initialContent = '', entryId, onContentChange }: EntryEditorProps): JSX.Element {
+export function EntryEditor({ initialContent = '', entryId, onContentChange, onEntrySaved, allowAI = true }: EntryEditorProps): JSX.Element {
   const [content, setContent] = useState(initialContent);
   const [sentiment, setSentiment] = useState<SentimentResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,15 +33,15 @@ export function EntryEditor({ initialContent = '', entryId, onContentChange }: E
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount to set initial content
 
-  // Real-time sentiment analysis
+  // Real-time sentiment analysis (only if AI features are enabled)
   useEffect(() => {
-    if (content.trim().length > 0) {
+    if (allowAI && content.trim().length > 0) {
       const result = analyzeSentiment(content);
       setSentiment(result);
     } else {
       setSentiment(null);
     }
-  }, [content]);
+  }, [content, allowAI]);
 
   const handleSave = async () => {
     if (!content.trim()) {
@@ -78,6 +80,11 @@ export function EntryEditor({ initialContent = '', entryId, onContentChange }: E
         description: entryId ? 'Entry updated successfully' : 'Entry saved successfully',
       });
 
+      // Notify parent component
+      if (onEntrySaved && data.entry?.id) {
+        onEntrySaved(data.entry.id);
+      }
+
       if (!entryId) {
         router.push(`/entries/${data.entry.id}`);
       } else {
@@ -106,7 +113,7 @@ export function EntryEditor({ initialContent = '', entryId, onContentChange }: E
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Write Entry</h2>
         <div className="flex items-center gap-4">
-          <SentimentIndicator sentiment={sentiment} />
+          {allowAI && <SentimentIndicator sentiment={sentiment} allowAI={allowAI} />}
           <Button onClick={handleSave} disabled={isSaving || !content.trim()}>
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? 'Saving...' : entryId ? 'Update' : 'Save'}

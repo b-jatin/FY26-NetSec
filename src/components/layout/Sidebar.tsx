@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { BookOpen, LayoutDashboard, FileText, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,7 +23,7 @@ export function Sidebar(): JSX.Element {
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/');
     router.refresh();
   };
 
@@ -30,7 +31,9 @@ export function Sidebar(): JSX.Element {
     <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-64 lg:bg-card lg:border-r">
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center border-b px-6">
-          <h1 className="text-xl font-bold text-primary">MindfulSpace</h1>
+          <Link href="/" className="text-xl font-bold text-primary hover:opacity-80 transition-opacity cursor-pointer">
+            Reflect AI
+          </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navItems.map((item) => {
@@ -53,7 +56,11 @@ export function Sidebar(): JSX.Element {
             );
           })}
         </nav>
-        <div className="border-t p-4">
+        <div className="border-t p-4 space-y-2">
+          <div className="flex items-center justify-between px-2">
+            <span className="text-sm text-muted-foreground">Theme</span>
+            <ThemeToggle />
+          </div>
           <Button
             variant="ghost"
             className="w-full justify-start"

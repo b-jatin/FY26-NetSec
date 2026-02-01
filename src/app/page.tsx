@@ -1,22 +1,47 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Shield, Sparkles, BarChart3 } from 'lucide-react';
+import { createSupabaseBrowserClient } from '@/lib/supabase';
+import { Footer } from '@/components/layout/Footer';
 
 export default function HomePage(): JSX.Element {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
   return (
     <main className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">MindfulSpace</h1>
+        <div className="container mx-auto px-4 py-4 flex items-center justify-end">
           <div className="flex gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-            <Link href="/signup">
-              <Button>Get Started</Button>
-            </Link>
+            {!isAuthenticated && (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost">Sign In</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button>Sign Up</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -25,9 +50,12 @@ export default function HomePage(): JSX.Element {
       <section className="flex-1 flex items-center justify-center p-8">
         <div className="container mx-auto max-w-4xl text-center space-y-8">
           <div className="space-y-4">
-            <h1 className="text-5xl font-bold tracking-tight">
-              Your AI-Powered Journaling Companion
+            <h1 className="text-7xl md:text-8xl font-bold tracking-tight text-primary">
+              Reflect AI
             </h1>
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
+              Your AI-Powered Journaling Companion
+            </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Maintain consistent journaling habits with intelligent AI assistance.
               Privacy-first design ensures your thoughts stay yours.
@@ -35,16 +63,35 @@ export default function HomePage(): JSX.Element {
           </div>
 
           <div className="flex gap-4 justify-center pt-4">
-            <Link href="/signup">
-              <Button size="lg" className="text-lg px-8">
+            {isAuthenticated ? (
+              <Link href="/write">
+                <Button size="lg" className="text-lg px-8">
+                  Start Journaling
+                </Button>
+              </Link>
+            ) : (
+              <Button 
+                size="lg" 
+                className="text-lg px-8"
+                onClick={() => setShowOnboarding(true)}
+              >
                 Start Journaling
               </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="text-lg px-8">
-                Sign In
-              </Button>
-            </Link>
+            )}
+          </div>
+
+          {/* Hero Image */}
+          <div className="relative w-full max-w-4xl mx-auto mt-12 mb-8">
+            <div className="aspect-video rounded-lg overflow-hidden">
+              <Image
+                src="/Landing_page_image.png"
+                alt="Reflect AI - AI-Powered Journaling"
+                width={1200}
+                height={675}
+                className="rounded-lg object-cover w-full h-full"
+                priority
+              />
+            </div>
           </div>
 
           {/* Features */}
@@ -79,6 +126,31 @@ export default function HomePage(): JSX.Element {
           </div>
         </div>
       </section>
+
+      <Footer />
+      
+      {!isAuthenticated && showOnboarding && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-lg p-6 max-w-md w-full space-y-4">
+            <h2 className="text-2xl font-bold">Welcome to Reflect AI</h2>
+            <p className="text-muted-foreground">
+              Get started by creating an account to begin your journaling journey.
+            </p>
+            <div className="flex gap-4">
+              <Link href="/signup" className="flex-1">
+                <Button className="w-full">Sign Up</Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowOnboarding(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

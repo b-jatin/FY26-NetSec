@@ -50,7 +50,7 @@ export function AccountSettings({ user }: AccountSettingsProps): JSX.Element {
         description: 'Your account and all data have been deleted',
       });
 
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       toast({
         title: 'Error',

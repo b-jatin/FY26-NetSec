@@ -118,9 +118,27 @@ export async function PUT(
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
     }
 
-    // Re-analyze sentiment and themes
-    const sentimentResult = analyzeSentiment(validated.content);
-    const themeResult = extractThemes(validated.content);
+    let sentimentScore: number | null = existingEntry.sentimentScore;
+    let sentimentLabel: string | null = existingEntry.sentimentLabel;
+    let themes: string[] = existingEntry.themes;
+    let analyzed = existingEntry.analyzed;
+
+    // Re-analyze sentiment and themes only if allowAnalytics was true for this entry
+    if (existingEntry.allowAnalytics) {
+      const sentimentResult = analyzeSentiment(validated.content);
+      const themeResult = extractThemes(validated.content);
+      sentimentScore = sentimentResult.score;
+      sentimentLabel = sentimentResult.label;
+      themes = themeResult.themes.slice(0, 5);
+      analyzed = true;
+    } else {
+      // If analytics were not allowed, ensure these fields are null/empty on update
+      sentimentScore = null;
+      sentimentLabel = null;
+      themes = [];
+      analyzed = false;
+    }
+
     const wordCount = validated.content.split(/\s+/).filter(Boolean).length;
 
     const entry = await prisma.entry.update({
@@ -128,10 +146,11 @@ export async function PUT(
       data: {
         content: validated.content,
         wordCount,
-        sentimentScore: sentimentResult.score,
-        sentimentLabel: sentimentResult.label,
-        themes: themeResult.themes.slice(0, 5),
-        analyzed: true,
+        sentimentScore,
+        sentimentLabel,
+        themes,
+        analyzed,
+        // allowAI and allowAnalytics are not updated here as they reflect creation time settings
       },
     });
 

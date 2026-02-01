@@ -45,13 +45,17 @@ model Entry {
   
   // Local Analysis (AFINN)
   sentimentScore    Float?          // -5 to +5 from AFINN
-  sentimentLabel    String?         // "positive", "neutral", "negative"
+  sentimentLabel    String?         // "very happy", "happy", "neutral", "sad", "depressed"
   themes            String[]        @default([])
   
   // Metadata
   analyzed          Boolean         @default(false)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  
+  // Privacy settings at time of entry creation
+  allowAI           Boolean         @default(true) // Whether AI features were enabled when entry was created
+  allowAnalytics    Boolean         @default(true) // Whether analytics were enabled when entry was created
   
   // Relationships
   analysis          Analysis?
@@ -153,6 +157,10 @@ model AIPrompt {
   promptText        String          @db.Text
   context           Json?           // What context was used to generate this
   
+  // Progressive prompts tracking
+  entryCount        Int?            // Which entry number this prompt is for (1st, 2nd, 3rd, etc.)
+  relatedEntryId    String?         // ID of entry that triggered this prompt generation
+  
   // User interaction
   used              Boolean         @default(false)
   usedAt            DateTime?
@@ -162,5 +170,6 @@ model AIPrompt {
   expiresAt         DateTime        // Prompts expire after 24 hours
   
   @@index([userId, generatedAt])
+  @@index([userId, entryCount, generatedAt])
   @@map("ai_prompts")
 }

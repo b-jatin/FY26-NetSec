@@ -7,6 +7,7 @@ interface Entry {
   id: string;
   wordCount: number;
   sentimentScore: number | null;
+  allowAnalytics?: boolean;
   createdAt: Date | string;
 }
 
@@ -15,11 +16,14 @@ interface StatsOverviewProps {
 }
 
 export function StatsOverview({ entries }: StatsOverviewProps): JSX.Element {
-  const totalEntries = entries.length;
-  const totalWords = entries.reduce((sum, e) => sum + e.wordCount, 0);
+  // Filter entries with analytics enabled for sentiment calculation
+  const analyticsEntries = entries.filter((e) => e.allowAnalytics !== false);
+
+  const totalEntries = entries.length; // Show all entries for count
+  const totalWords = entries.reduce((sum, e) => sum + e.wordCount, 0); // Show all entries for word count
   const avgSentiment =
-    entries.length > 0
-      ? entries.reduce((sum, e) => sum + (e.sentimentScore || 0), 0) / entries.length
+    analyticsEntries.length > 0
+      ? analyticsEntries.reduce((sum, e) => sum + (e.sentimentScore || 0), 0) / analyticsEntries.length
       : 0;
 
   // Calculate streak (consecutive days with entries)

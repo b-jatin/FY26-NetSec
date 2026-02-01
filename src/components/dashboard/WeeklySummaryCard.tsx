@@ -37,19 +37,29 @@ export function WeeklySummaryCard({ userId }: WeeklySummaryCardProps): JSX.Eleme
   const handleRegenerate = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/ai/summary/weekly', { method: 'POST' });
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
-        toast({
-          title: 'Success',
-          description: 'Weekly summary regenerated',
-        });
+      const response = await fetch('/api/ai/summary/weekly', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to regenerate summary');
       }
+      
+      const data = await response.json();
+      setSummary(data.summary);
+      toast({
+        title: 'Success',
+        description: 'Weekly summary regenerated successfully',
+      });
     } catch (error) {
+      console.error('Failed to regenerate summary:', error);
       toast({
         title: 'Error',
-        description: 'Failed to regenerate summary',
+        description: error instanceof Error ? error.message : 'Failed to regenerate summary',
         variant: 'destructive',
       });
     } finally {

@@ -7,9 +7,14 @@ import { cn } from '@/lib/utils';
 interface SentimentIndicatorProps {
   sentiment: SentimentResult | null;
   className?: string;
+  allowAI?: boolean;
 }
 
-export function SentimentIndicator({ sentiment, className }: SentimentIndicatorProps): JSX.Element {
+export function SentimentIndicator({ sentiment, className, allowAI = true }: SentimentIndicatorProps): JSX.Element | null {
+  if (!allowAI) {
+    return null;
+  }
+
   if (!sentiment) {
     return (
       <div className={cn('flex items-center gap-2', className)}>
@@ -21,9 +26,11 @@ export function SentimentIndicator({ sentiment, className }: SentimentIndicatorP
 
   const getIcon = () => {
     switch (sentiment.label) {
-      case 'positive':
+      case 'very happy':
+      case 'happy':
         return <Smile className="h-5 w-5 text-sentiment-positive" />;
-      case 'negative':
+      case 'sad':
+      case 'depressed':
         return <Frown className="h-5 w-5 text-sentiment-negative" />;
       default:
         return <Meh className="h-5 w-5 text-sentiment-neutral" />;
@@ -32,10 +39,14 @@ export function SentimentIndicator({ sentiment, className }: SentimentIndicatorP
 
   const getLabel = () => {
     switch (sentiment.label) {
-      case 'positive':
-        return 'Positive';
-      case 'negative':
-        return 'Negative';
+      case 'very happy':
+        return 'Very Happy';
+      case 'happy':
+        return 'Happy';
+      case 'sad':
+        return 'Sad';
+      case 'depressed':
+        return 'Depressed';
       default:
         return 'Neutral';
     }

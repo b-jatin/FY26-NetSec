@@ -61,7 +61,7 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps):
   const sentiment = entry.sentimentScore !== null && entry.sentimentLabel
     ? {
         score: entry.sentimentScore,
-        label: entry.sentimentLabel as 'positive' | 'neutral' | 'negative',
+        label: entry.sentimentLabel as 'very happy' | 'happy' | 'neutral' | 'sad' | 'depressed',
         positiveWords: [],
         negativeWords: [],
         comparative: entry.sentimentScore / 5,
@@ -73,6 +73,7 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps):
       entry={entry}
       entryId={params.id}
       sentiment={sentiment}
+      allowAI={entry.allowAI}
     />
   );
 }

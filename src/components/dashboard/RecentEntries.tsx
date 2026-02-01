@@ -19,7 +19,7 @@ interface RecentEntriesProps {
   entries: Entry[];
 }
 
-export function RecentEntries({ entries }: RecentEntriesProps): JSX.Element {
+export function RecentEntries({ entries }: RecentEntriesProps): JSX.Element | null {
   if (entries.length === 0) {
     return null;
   }

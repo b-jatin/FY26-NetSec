@@ -7,15 +7,23 @@ import { Sparkles } from 'lucide-react';
 
 interface AICompanionProps {
   currentText: string;
+  allowAI?: boolean;
 }
 
-export function AICompanion({ currentText }: AICompanionProps): JSX.Element {
+export function AICompanion({ currentText, allowAI = true }: AICompanionProps): JSX.Element | null {
   const [suggestion, setSuggestion] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debouncedText = useDebounce(currentText, 2000);
 
   useEffect(() => {
+    if (!allowAI) {
+      setSuggestion('');
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+    
     if (debouncedText.length > 100) {
       setIsLoading(true);
       setSuggestion(''); // Clear previous suggestion
@@ -57,9 +65,9 @@ export function AICompanion({ currentText }: AICompanionProps): JSX.Element {
       setError(null);
       setIsLoading(false);
     }
-  }, [debouncedText]);
+  }, [debouncedText, allowAI]);
 
-  if (!suggestion && !isLoading && !error) {
+  if (!allowAI || (!suggestion && !isLoading && !error)) {
     return null;
   }
 
@@ -77,7 +85,7 @@ export function AICompanion({ currentText }: AICompanionProps): JSX.Element {
         ) : error ? (
           <p className="text-sm text-destructive">Error: {error}</p>
         ) : suggestion ? (
-          <p className="text-sm italic text-muted-foreground">&ldquo;{suggestion}&rdquo;</p>
+          <p className="text-sm text-muted-foreground">&ldquo;{suggestion}&rdquo;</p>
         ) : null}
       </CardContent>
     </Card>
